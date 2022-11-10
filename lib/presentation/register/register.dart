@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:ogepa/presentation/register/registerController.dart';
 
 import '../../actionButton.dart';
 import '../../function.dart';
@@ -10,15 +13,20 @@ import '../../constant.dart';
 import '../../richText.dart';
 import '../login/login.dart';
 
-class Register extends StatefulWidget {
+final registerControllerProvider =
+    StateNotifierProvider<RegisterController, AsyncValue<void>>((ref) {
+  return RegisterController();
+});
+
+class Register extends ConsumerStatefulWidget {
   static String id = 'register';
   const Register({Key? key}) : super(key: key);
 
   @override
-  _RegisterState createState() => _RegisterState();
+  ConsumerState createState() => _RegisterState();
 }
 
-class _RegisterState extends State<Register> {
+class _RegisterState extends ConsumerState<Register> {
   bool _obscureText = true;
   bool _obscureText2 = true;
   TextEditingController _email = TextEditingController();
@@ -34,6 +42,9 @@ class _RegisterState extends State<Register> {
   @override
   void initState() {
     super.initState();
+    _email = TextEditingController();
+    _password = TextEditingController();
+    _confirmPassword = TextEditingController();
     _tapGestureRecognizer = TapGestureRecognizer();
     _tapGestureRecognizer2 = TapGestureRecognizer();
     _tapGestureRecognizer3 = TapGestureRecognizer();
@@ -66,6 +77,19 @@ class _RegisterState extends State<Register> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<void>>(
+      registerControllerProvider,
+      (_, state) => state.whenOrNull(
+        error: (error, stackTrace) {
+          // show snackbar if an error occurred
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString())),
+          );
+        },
+      ),
+    );
+    final registerValue = ref.watch(registerControllerProvider);
+    final isLoading = registerValue is AsyncLoading<void>;
     return SafeArea(
       child: Scaffold(
         body: SingleChildScrollView(
@@ -86,7 +110,7 @@ class _RegisterState extends State<Register> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Email Address',
-                      prefixIcon: Highkon(
+                      prefixIcon: const Highkon(
                         icondata: FontAwesomeIcons.user,
                       ),
                     ),
@@ -101,7 +125,7 @@ class _RegisterState extends State<Register> {
                     keyboardType: TextInputType.text,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Password',
-                      prefixIcon: Highkon(
+                      prefixIcon: const Highkon(
                         icondata: FontAwesomeIcons.lock,
                       ),
                       suffixIcon: InkWell(
@@ -126,7 +150,7 @@ class _RegisterState extends State<Register> {
                     keyboardType: TextInputType.text,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Confirm password',
-                      prefixIcon: Highkon(
+                      prefixIcon: const Highkon(
                         icondata: FontAwesomeIcons.lock,
                       ),
                       suffixIcon: InkWell(
@@ -153,7 +177,7 @@ class _RegisterState extends State<Register> {
                   constantSmallerHorizontalSpacing,
                   RichText(
                     text: TextSpan(children: [
-                      TextSpan(
+                      const TextSpan(
                         text: 'By clicking the ',
                         style: constantRichStyle,
                       ),
@@ -162,11 +186,11 @@ class _RegisterState extends State<Register> {
                         text: 'Sign Up ',
                         style: constantActionStyle,
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: 'button, ',
                         style: constantRichStyle,
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: 'you agree to our ',
                         style: constantRichStyle,
                       ),
@@ -175,7 +199,7 @@ class _RegisterState extends State<Register> {
                         text: 'Terms & Condition ',
                         style: constantRichStyleUnderline,
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: 'and ',
                         style: constantRichStyle,
                       ),
@@ -188,19 +212,17 @@ class _RegisterState extends State<Register> {
                   ),
                   constantSmallerHorizontalSpacing,
                   ActionButton(
-                    dontHideActionText: showSpinner,
+                    isLoading: isLoading,
                     actionString: 'Sign up',
                     action: () async {
-                      setState(() {
-                        showSpinner = false;
-                      });
                       if (_formKey.currentState!.validate()) {
-                        // await Log().register(
-                        //     context, _email.text.trim(), _password.text.trim());
+                        ref
+                            .read(registerControllerProvider.notifier)
+                            .register(_email.text.trim(), _password.text.trim())
+                            .then((value) => value?.user != null
+                                ? Navigator.pushNamed(context, Login.id)
+                                : null);
                       }
-                      setState(() {
-                        showSpinner = true;
-                      });
                     },
                   ),
                   constantSmallerHorizontalSpacing,

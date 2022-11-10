@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../actionButton.dart';
@@ -9,23 +10,30 @@ import '../../highkon.dart';
 import '../../constant.dart';
 import '../../richText.dart';
 import '../register/register.dart';
+import '../report/Report.dart';
+import 'loginController.dart';
 
-class Login extends StatefulWidget {
+final loginControllerProvider =
+    StateNotifierProvider<LoginController, AsyncValue<void>>((ref) {
+  return LoginController();
+});
+
+class Login extends ConsumerStatefulWidget {
   static String id = 'login';
   const Login({Key? key}) : super(key: key);
 
   @override
-  _LoginState createState() => _LoginState();
+  ConsumerState createState() => _LoginState();
 }
 
-class _LoginState extends State<Login> {
+class _LoginState extends ConsumerState<Login> {
   bool _obscureText = true;
   bool showSpinner = true;
   late TapGestureRecognizer _tapGestureRecognizerForgotPassword;
   late TapGestureRecognizer _tapGestureRecognizerSignIn;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController email = TextEditingController();
-  TextEditingController password = TextEditingController();
+  late TextEditingController _email;
+  late TextEditingController _password;
 
   void _toggle() {
     setState(() {
@@ -36,12 +44,16 @@ class _LoginState extends State<Login> {
   @override
   void initState() {
     super.initState();
+    _email = TextEditingController();
+    _password = TextEditingController();
     _tapGestureRecognizerForgotPassword = TapGestureRecognizer();
     _tapGestureRecognizerSignIn = TapGestureRecognizer();
   }
 
   @override
   void dispose() {
+    _email.dispose();
+    _password.dispose();
     _tapGestureRecognizerForgotPassword.dispose();
     _tapGestureRecognizerSignIn.dispose();
     super.dispose();
@@ -49,6 +61,19 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<void>>(
+      loginControllerProvider,
+      (_, state) => state.whenOrNull(
+        error: (error, stackTrace) {
+          // show snackbar if an error occurred
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString())),
+          );
+        },
+      ),
+    );
+    final registerValue = ref.watch(registerControllerProvider);
+    final isLoading = registerValue is AsyncLoading<void>;
     return SafeArea(
       child: Scaffold(
         body: SingleChildScrollView(
@@ -65,11 +90,11 @@ class _LoginState extends State<Login> {
                   ),
                   constantLargerWhiteHorizontalSpacing,
                   TextFormField(
-                    controller: email,
+                    controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Email Address',
-                      prefixIcon: Highkon(
+                      prefixIcon: const Highkon(
                         icondata: FontAwesomeIcons.user,
                       ),
                     ),
@@ -79,12 +104,12 @@ class _LoginState extends State<Login> {
                   ),
                   constantSmallerHorizontalSpacing,
                   TextFormField(
-                    controller: password,
+                    controller: _password,
                     obscureText: _obscureText,
                     keyboardType: TextInputType.text,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Password',
-                      prefixIcon: Highkon(
+                      prefixIcon: const Highkon(
                         icondata: FontAwesomeIcons.lock,
                       ),
                       suffixIcon: InkWell(
@@ -104,26 +129,17 @@ class _LoginState extends State<Login> {
                   constantLargerWhiteHorizontalSpacing,
                   ActionButton(
                     action: () async {
-                      setState(() {
-                        showSpinner = false;
-                      });
                       if (_formKey.currentState!.validate()) {
-                        try {
-                          // await Log().login(
-                          //   context,
-                          //   email.text.trim(),
-                          //   password.text.trim(),
-                          // );
-                        } catch (e) {
-                          showErrorMsg(context, e.toString());
-                        }
+                        ref
+                            .read(loginControllerProvider.notifier)
+                            .login(_email.text.trim(), _password.text.trim())
+                            .then((value) => value?.user != null
+                                ? Navigator.pushNamed(context, Report.id)
+                                : null);
                       }
-                      setState(() {
-                        showSpinner = true;
-                      });
                     },
                     actionString: 'Sign in',
-                    dontHideActionText: showSpinner,
+                    isLoading: isLoading,
                   ),
                   constantSmallerHorizontalSpacing,
                   RichTexts(

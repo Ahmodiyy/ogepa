@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 class ActionButton extends StatelessWidget {
   final String actionString;
   final Function action;
-  final bool dontHideActionText;
+  final bool isLoading;
 
   ActionButton({
     required this.actionString,
     required this.action,
-    required this.dontHideActionText,
+    required this.isLoading,
   });
 
   @override
@@ -31,13 +31,15 @@ class ActionButton extends StatelessWidget {
         await action();
       },
       child: Visibility(
-        visible: dontHideActionText,
-        replacement: CircularProgressIndicator(),
-        child: Text(
+        visible: isLoading,
+        replacement: Text(
           actionString,
           style: const TextStyle(
             fontSize: 20,
           ),
+        ),
+        child: const CircularProgressIndicator(
+          color: Colors.white,
         ),
       ),
     );

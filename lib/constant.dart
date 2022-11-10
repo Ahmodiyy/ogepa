@@ -20,7 +20,7 @@ const constantTextFieldDecoration = InputDecoration(
     )),
   ),
   focusedBorder: OutlineInputBorder(
-    borderSide: BorderSide(color: Color(0xffF6AB36), width: 1.0),
+    borderSide: BorderSide(color: Color(0xff087D04), width: 1.0),
     borderRadius: BorderRadius.all(Radius.circular(
       15,
     )),

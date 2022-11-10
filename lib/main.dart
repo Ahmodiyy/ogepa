@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ogepa/presentation/login/login.dart';
 import 'package:ogepa/presentation/onboarding/onboardingScreen.dart';
 import 'package:ogepa/presentation/register/register.dart';
+import 'package:ogepa/presentation/report/Report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'constant.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await Firebase.initializeApp();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool seen = (prefs.getBool('seen') ?? false);
   runApp(
-    MyApp(
-      showHome: seen,
+    ProviderScope(
+      child: MyApp(
+        showHome: seen,
+      ),
     ),
   );
 }
@@ -26,7 +32,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    FlutterNativeSplash.remove();
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Ogepa',
       theme: ThemeData(
         // This is the theme of your application.
@@ -39,13 +47,13 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: constantAppColorTheme,
       ),
       initialRoute: showHome ? Register.id : OnboardScreen.id,
       routes: {
         OnboardScreen.id: (context) => const OnboardScreen(),
         Register.id: (context) => const Register(),
         Login.id: (context) => const Login(),
+        Report.id: (context) => const Report(),
       },
     );
   }
