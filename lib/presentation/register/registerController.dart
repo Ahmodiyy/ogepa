@@ -18,7 +18,7 @@ class RegisterController extends StateNotifier<AsyncValue<void>> {
       state = AsyncValue.error(e.toString(), StackTrace.current);
     } finally {
       // set state to `data(null)` at the end (both for success and failure)
-      state = AsyncValue.data(userCredential);
+      state = const AsyncValue.data(null);
     }
     return userCredential;
   }

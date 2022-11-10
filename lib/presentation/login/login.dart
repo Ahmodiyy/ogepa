@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:ogepa/data/login/loginRepo.dart';
 
 import '../../actionButton.dart';
 import '../../function.dart';
@@ -72,8 +74,8 @@ class _LoginState extends ConsumerState<Login> {
         },
       ),
     );
-    final registerValue = ref.watch(registerControllerProvider);
-    final isLoading = registerValue is AsyncLoading<void>;
+    final loginValue = ref.watch(loginControllerProvider);
+    final isLoading = loginValue is AsyncLoading<void>;
     return SafeArea(
       child: Scaffold(
         body: SingleChildScrollView(
@@ -130,12 +132,8 @@ class _LoginState extends ConsumerState<Login> {
                   ActionButton(
                     action: () async {
                       if (_formKey.currentState!.validate()) {
-                        ref
-                            .read(loginControllerProvider.notifier)
-                            .login(_email.text.trim(), _password.text.trim())
-                            .then((value) => value?.user != null
-                                ? Navigator.pushNamed(context, Report.id)
-                                : null);
+                        ref.read(loginControllerProvider.notifier).login(
+                            context, _email.text.trim(), _password.text.trim());
                       }
                     },
                     actionString: 'Sign in',

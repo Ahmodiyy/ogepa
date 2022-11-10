@@ -1,24 +1,27 @@
-import 'package:flutter/gestures.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../actionButton.dart';
 import '../../function.dart';
 import '../../headerText.dart';
-import '../../highkon.dart';
 import '../../constant.dart';
-import '../../richText.dart';
-import '../register/register.dart';
 import 'ReportController.dart';
 
+final selectImageProvider = StateProvider<bool>((ref) {
+  return false;
+});
 final reportControllerProvider =
     StateNotifierProvider<ReportController, AsyncValue<void>>((ref) {
   return ReportController();
 });
 
 class Report extends ConsumerStatefulWidget {
-  static String id = 'login';
+  static String id = 'Report';
   const Report({Key? key}) : super(key: key);
 
   @override
@@ -57,8 +60,9 @@ class _ReportState extends ConsumerState<Report> {
         },
       ),
     );
-    final registerValue = ref.watch(reportControllerProvider);
-    final isLoading = registerValue is AsyncLoading<void>;
+    final reportValue = ref.watch(reportControllerProvider);
+    final selectImage = ref.watch(selectImageProvider);
+    final isLoading = reportValue is AsyncLoading<void>;
     return SafeArea(
       child: Scaffold(
         body: SingleChildScrollView(
@@ -71,7 +75,7 @@ class _ReportState extends ConsumerState<Report> {
                 children: [
                   constantLargerWhiteHorizontalSpacing,
                   HeaderText(
-                    headerTextString: 'Welcome\nback!',
+                    headerTextString: 'Report\nenvironment violation!',
                   ),
                   constantLargerWhiteHorizontalSpacing,
                   TextFormField(
@@ -79,28 +83,68 @@ class _ReportState extends ConsumerState<Report> {
                     keyboardType: TextInputType.text,
                     decoration: constantTextFieldDecoration.copyWith(
                       hintText: 'Title',
-                      prefixIcon: const Highkon(
-                        icondata: FontAwesomeIcons.user,
-                      ),
                     ),
                     validator: (value) {
                       return validateEmail(value);
                     },
                   ),
                   constantSmallerHorizontalSpacing,
+                  TextFormField(
+                    controller: _description,
+                    maxLines: 5,
+                    keyboardType: TextInputType.multiline,
+                    decoration: constantTextFieldDecoration.copyWith(
+                      hintText: 'Description',
+                    ),
+                    validator: (value) {
+                      return validateEmail(value);
+                    },
+                  ),
+                  constantSmallerHorizontalSpacing,
+                  Text('Select image'),
+                  constantSmallerHorizontalSpacing,
+                  Container(
+                    decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(15))),
+                    height: 150,
+                    child: IconButton(
+                      icon: Icon(
+                        FontAwesomeIcons.upload,
+                      ),
+                      onPressed: () async {
+                        try {
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles();
+                          print('file name is ${result?.files.first.name}');
+                          if (result != null) {
+                            File file = File(result.files.first.path!);
+                            String? fileName = result.files.first.name;
+                            await FirebaseStorage.instance
+                                .ref('picture/$fileName')
+                                .putFile(file);
+                          } else {
+                            print('User canceled the picker');
+                          }
+                        } catch (e) {
+                          print(e.toString());
+                        }
+                      },
+                    ),
+                  ),
                   constantLargerWhiteHorizontalSpacing,
                   ActionButton(
                     action: () async {
                       if (_formKey.currentState!.validate()) {
-                        ref
-                            .read(reportControllerProvider.notifier)
-                            .login(_title.text.trim(), _description.text.trim())
-                            .then((value) => value?.user != null
-                                ? Navigator.pushNamed(context, Report.id)
-                                : null);
+                        // ref
+                        //     .read(reportControllerProvider.notifier)
+                        //     .login(_title.text.trim(), _description.text.trim())
+                        //     .then((value) => value?.user != null
+                        //         ? Navigator.pushNamed(context, Report.id)
+                        //         : null);
                       }
                     },
-                    actionString: 'Sign in',
+                    actionString: 'Report',
                     isLoading: isLoading,
                   ),
                 ],
