@@ -7,8 +7,8 @@ class LoginRepo {
     return _firebaseAuth.currentUser;
   }
 
-  login(String email, String password) async {
-    await _firebaseAuth.signInWithEmailAndPassword(
+  Future<UserCredential> login(String email, String password) async {
+    return await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );

@@ -132,8 +132,12 @@ class _LoginState extends ConsumerState<Login> {
                   ActionButton(
                     action: () async {
                       if (_formKey.currentState!.validate()) {
-                        ref.read(loginControllerProvider.notifier).login(
-                            context, _email.text.trim(), _password.text.trim());
+                        ref
+                            .read(loginControllerProvider.notifier)
+                            .login(_email.text.trim(), _password.text.trim())
+                            .then((value) => value?.user != null
+                                ? Navigator.pushNamed(context, Report.id)
+                                : null);
                       }
                     },
                     actionString: 'Sign in',

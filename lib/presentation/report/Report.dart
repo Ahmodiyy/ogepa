@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../actionButton.dart';
 import '../../function.dart';
@@ -12,9 +11,7 @@ import '../../headerText.dart';
 import '../../constant.dart';
 import 'ReportController.dart';
 
-final selectImageProvider = StateProvider<bool>((ref) {
-  return false;
-});
+final selectImageProvider = StateProvider<bool>((ref) => false);
 final reportControllerProvider =
     StateNotifierProvider<ReportController, AsyncValue<void>>((ref) {
   return ReportController();
@@ -32,6 +29,8 @@ class _ReportState extends ConsumerState<Report> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late TextEditingController _title;
   late TextEditingController _description;
+  File? file;
+  String? fileName;
 
   @override
   void initState() {
@@ -60,6 +59,14 @@ class _ReportState extends ConsumerState<Report> {
         },
       ),
     );
+    ref.listen<AsyncValue<void>>(
+      reportControllerProvider,
+      (_, state) => state.whenOrNull(
+        data: (data) => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thanks! Your report has been logged')),
+        ),
+      ),
+    );
     final reportValue = ref.watch(reportControllerProvider);
     final selectImage = ref.watch(selectImageProvider);
     final isLoading = reportValue is AsyncLoading<void>;
@@ -85,7 +92,7 @@ class _ReportState extends ConsumerState<Report> {
                       hintText: 'Title',
                     ),
                     validator: (value) {
-                      return validateEmail(value);
+                      return validate(value);
                     },
                   ),
                   constantSmallerHorizontalSpacing,
@@ -97,51 +104,95 @@ class _ReportState extends ConsumerState<Report> {
                       hintText: 'Description',
                     ),
                     validator: (value) {
-                      return validateEmail(value);
+                      return validate(value);
                     },
                   ),
                   constantSmallerHorizontalSpacing,
-                  Text('Select image'),
+                  const Text('Select image'),
                   constantSmallerHorizontalSpacing,
                   Container(
                     decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.all(Radius.circular(15))),
                     height: 150,
-                    child: IconButton(
-                      icon: Icon(
-                        FontAwesomeIcons.upload,
-                      ),
-                      onPressed: () async {
-                        try {
-                          FilePickerResult? result =
-                              await FilePicker.platform.pickFiles();
-                          print('file name is ${result?.files.first.name}');
-                          if (result != null) {
-                            File file = File(result.files.first.path!);
-                            String? fileName = result.files.first.name;
-                            await FirebaseStorage.instance
-                                .ref('picture/$fileName')
-                                .putFile(file);
-                          } else {
-                            print('User canceled the picker');
-                          }
-                        } catch (e) {
-                          print(e.toString());
-                        }
-                      },
-                    ),
+                    child: selectImage
+                        ? Stack(
+                            children: [
+                              Image.file(
+                                file!,
+                                width: double.infinity,
+                              ),
+                              Center(
+                                child: IconButton(
+                                    onPressed: () {
+                                      file = null;
+                                      ref
+                                          .read(selectImageProvider.notifier)
+                                          .update((state) => !state);
+                                    },
+                                    icon: const Icon(
+                                        FontAwesomeIcons.circleXmark)),
+                              )
+                            ],
+                          )
+                        : IconButton(
+                            icon: const Icon(
+                              FontAwesomeIcons.upload,
+                            ),
+                            onPressed: () async {
+                              try {
+                                FilePickerResult? result =
+                                    await FilePicker.platform.pickFiles();
+                                print(
+                                    'file name is ${result?.files.first.name}');
+
+                                if (result != null) {
+                                  file = File(result.files.first.path!);
+                                  fileName = result.files.first.name;
+                                  ref
+                                      .read(selectImageProvider.notifier)
+                                      .update((state) => !state);
+                                } else {
+                                  print('User canceled the picker');
+                                }
+                              } catch (e) {
+                                print('eroooooooooooooooor1 ${e.toString()}');
+                              }
+                            },
+                          ),
                   ),
                   constantLargerWhiteHorizontalSpacing,
                   ActionButton(
                     action: () async {
                       if (_formKey.currentState!.validate()) {
-                        // ref
-                        //     .read(reportControllerProvider.notifier)
-                        //     .login(_title.text.trim(), _description.text.trim())
-                        //     .then((value) => value?.user != null
-                        //         ? Navigator.pushNamed(context, Report.id)
-                        //         : null);
+                        if (file == null && fileName == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Select an image to continue')),
+                          );
+                          return;
+                        }
+                        ref
+                            .read(reportControllerProvider.notifier)
+                            .report(
+                              title: _title.text,
+                              file: file!,
+                              fileName: fileName!,
+                              description: _description.text,
+                            )
+                            .then((value) {
+                          if (value != null) {
+                            _title.clear();
+                            _description.clear();
+                            fileName = null;
+                            file = null;
+                            ref
+                                .read(selectImageProvider.notifier)
+                                .update((state) => !state);
+                          }
+                        }, onError: (e) {
+                          print('eroooooooooooooooooor2 $e');
+                        });
                       }
                     },
                     actionString: 'Report',
