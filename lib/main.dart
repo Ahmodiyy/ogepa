@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ogepa/presentation/company/company.dart';
+import 'package:ogepa/presentation/homepage/Homepage.dart';
 import 'package:ogepa/presentation/login/login.dart';
 import 'package:ogepa/presentation/onboarding/onboardingScreen.dart';
+import 'package:ogepa/presentation/recycler/recycler.dart';
 import 'package:ogepa/presentation/register/register.dart';
 import 'package:ogepa/presentation/report/Report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,12 +51,15 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.green,
       ),
-      initialRoute: showHome ? Register.id : OnboardScreen.id,
+      initialRoute: showHome ? Homepage.id : OnboardScreen.id,
       routes: {
         OnboardScreen.id: (context) => const OnboardScreen(),
         Register.id: (context) => const Register(),
         Login.id: (context) => const Login(),
         Report.id: (context) => const Report(),
+        Homepage.id: (context) => const Homepage(),
+        Recycler.id: (context) => const Recycler(),
+        Company.id: (context) => const Company(),
       },
     );
   }
